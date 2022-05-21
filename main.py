@@ -28,8 +28,8 @@ def kins_maker(num_kins, batch=None, img=error_image, x0=0, y0=0, x1=640, y1=480
     return kins
 
 # タッチペンで描く円(曲線)を描画するためのプログラム
-def circle_node_add(x,y,tp=(0,0)):
-    edge = pyglet.shapes.Line(x,y,tp[0],tp[1],width=5)
+def circle_node_add(x,y,tp=(0,0),batch=None):
+    edge = pyglet.shapes.Line(x,y,tp[0],tp[1],width=5,batch=batch)
     return edge
 
 # バッチの用意, 自分のキンと相手のキンを描画
@@ -46,6 +46,7 @@ kins_state = False
 def on_draw():
     window.clear()
     main_batch.draw() # kins_pのオブジェクトリストもバッチで一括描画！
+    circle_batch.draw()
 
 @window.event
 def on_mouse_press(x,y,button,modifiers):
@@ -62,11 +63,10 @@ def on_mouse_drag(x,y,dx,dy,buttons,modifiers):
     min_distance = 20
     distance = math.sqrt((x-circle_point_tmp[0])**2 + (y-circle_point_tmp[1])**2)
     if distance >= min_distance:
-        edge = circle_node_add(x,y,tp=circle_point_tmp)
+        edge = circle_node_add(x,y,tp=circle_point_tmp,batch=circle_batch)
         circle_point_tmp = x,y
         circle_polygon.append(circle_point_tmp)
         print(circle_point_tmp,"drag")
-        # edge.draw()
     
 @window.event
 def on_mouse_release(x,y,button, modifiers):
