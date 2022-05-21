@@ -18,12 +18,23 @@ def polygon_edge_add(np=(1,1),tp=(0,0),batch=None):
     edge = pyglet.shapes.Line(np[0],np[1],tp[0],tp[1],width=5,batch=batch)
     return edge
 
+p_node = 200,300
 polygon = [(200,100),(400,100),(500,250),(300,400),(100,250),(200,100)]
 polygon_edge = []
+radian_total = 0.0
 tmp_point = 0,0
 for point in polygon:
     if not tmp_point == (0,0):
+        # p_nodeとpoint、p_nodeとtmp_pointの
+        # 残差ベクトルをそれぞれ作って、
+        # 2直線のなす角を求め、合計角に追加する
+        radian_total += 0
         polygon_edge.append(polygon_edge_add(point,tmp_point,batch=main_batch))
+
+if radian_total >= 0.95:
+    print("in the polygon is True")
+else:
+    print("in the polygon is False")
 
 @window.event
 def on_draw():
