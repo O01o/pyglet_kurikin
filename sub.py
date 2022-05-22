@@ -19,11 +19,22 @@ def polygon_edge_add(np=(1,1),tp=(0,0),batch=None):
     return edge
 
 # inner mode
-p_node = pyglet.shapes.Circle(200,300,8,batch=main_batch)
+# p_node = pyglet.shapes.Circle(200,300,8,batch=main_batch)
 # outer mode
 # p_node = pyglet.shapes.Circle(100,400,8,batch=main_batch)
+# random group mode
+p_nodes = []
+count = 1000
+for i in range(count):
+    x = random.randint(0,640)
+    y = random.randint(0,480)
+    p_nodes.append(pyglet.shapes.Circle(x,y,8,batch=main_batch))
 
-polygon = [(200,100),(400,100),(500,250),(300,400),(100,250),(200,100)]
+# pentagon mode
+# polygon = [(200,100),(400,100),(500,250),(300,400),(100,250),(200,100)]
+# star mode
+polygon = [(200,100),(500,250),(100,250),(400,100),(300,400),(200,100)]
+
 polygon_edge = []
 tmp_point = 0,0
 
@@ -36,25 +47,27 @@ for point in polygon:
 radian_total = 0.0
 
 # WindingNumberAlgorithm
-print(p_node.x, p_node.y)
-for edge in polygon_edge:
-    edge.opacity = 150
-    # p_nodeとpoint、p_nodeとtmp_pointの
-    # 残差ベクトルをそれぞれ作って、
-    # 2直線のなす角を求め、合計角に追加する
-    x0,y0,x1,y1 = edge.position
-    vec0 = x0-p_node.x, y0-p_node.y
-    vec1 = x1-p_node.x, y1-p_node.y
-    radian = math.acos(((vec0[0]*vec1[0])+(vec0[1]*vec1[1]))/((math.sqrt((vec0[0]**2)+(vec0[1]**2)))*(math.sqrt((vec1[0]**2)+(vec1[1]**2)))))
-    print(radian)
-    radian_total += radian
+for p_node in p_nodes:        
+    for edge in polygon_edge:
+        edge.opacity = 150
+        # p_nodeとpoint、p_nodeとtmp_pointの
+        # 残差ベクトルをそれぞれ作って、
+        # 2直線のなす角を求め、合計角に追加する
+        x0,y0,x1,y1 = edge.position
+        vec0 = x0-p_node.x, y0-p_node.y
+        vec1 = x1-p_node.x, y1-p_node.y
+        radian = math.acos(((vec0[0]*vec1[0])+(vec0[1]*vec1[1]))/((math.sqrt((vec0[0]**2)+(vec0[1]**2)))*(math.sqrt((vec1[0]**2)+(vec1[1]**2)))))
+        # print(radian) # debug
+        radian_total += radian
+        
+    # WindingNumberAlgorithmによる多角形内外判定の結果出力
+    # print(radian_total) # debug
+    if radian_total >= 1.999 * math.pi:
+        p_node.color = 100,100,255
+    else:
+        p_node.color = 255,100,100
+    radian_total = 0
 
-# WindingNumberAlgorithmによる多角形内外判定の結果出力
-print(radian_total / math.pi)
-if radian_total >= 1.95 * math.pi:
-    print("in the polygon is True")
-else:
-    print("in the polygon is False")
 
 @window.event
 def on_draw():
