@@ -18,12 +18,13 @@ enemy_kins_image = pyglet.image.load("images/b0.png")
 error_image = pyglet.image.load("images/a1.png")
 
 # 自分または相手のキンの描画
-def kins_maker(num_kins, batch=None, img=error_image, x0=0, y0=0, x1=640, y1=480):
+def kins_maker(num_kins, batch=None, img=error_image, x0=0, y0=0, x1=640, y1=480, color=(255,255,255)):
     kins = []
     for i in range(num_kins):
         kin_x = random.randint(x0,x1)
         kin_y = random.randint(y0,y1)
-        kin_new = pyglet.sprite.Sprite(img=img, x=kin_x, y=kin_y, batch=batch)
+        # kin_new = pyglet.sprite.Sprite(img=img, x=kin_x, y=kin_y, batch=batch)
+        kin_new = pyglet.shapes.Circle(kin_x,kin_y,8,color=color,batch=main_batch)
         kins.append(kin_new)
     return kins
 
@@ -35,8 +36,8 @@ def circle_node_add(x,y,tp=(0,0),batch=None):
 # バッチの用意, 自分のキンと相手のキンを描画
 main_batch = pyglet.graphics.Batch()
 circle_batch = pyglet.graphics.Batch()
-kins_p = kins_maker(num_kins=10, batch=main_batch, img=player_kins_image, x0=0, y0=240, x1=240, y1=480) # 自分のキンの描画
-kins_e = kins_maker(num_kins=10, batch=main_batch, img=enemy_kins_image, x0=400, y0=0, x1=640, y1=240) # 自分のキンの描画
+kins_p = kins_maker(num_kins=10, batch=main_batch, img=player_kins_image, x0=0, y0=240, x1=240, y1=480, color=(100,100,255)) # 自分のキンの描画
+kins_e = kins_maker(num_kins=10, batch=main_batch, img=enemy_kins_image, x0=400, y0=0, x1=640, y1=240, color=(255,100,100)) # 自分のキンの描画
 circle_point_tmp = 0,0
 circle_polygon = []
 kins_state = False
