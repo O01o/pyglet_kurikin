@@ -60,7 +60,7 @@ def on_mouse_press(x,y,button,modifiers):
     global radian_total
     circle_point_tmp = x,y
     circle_polygon.append(circle_point_tmp)
-    print(circle_point_tmp,"pressed")
+    # print(circle_point_tmp,"pressed") # debug
     
     # 多角形が描画されてる場合にその描画を消す
     circle_polygon = []
@@ -75,14 +75,14 @@ def on_mouse_drag(x,y,dx,dy,buttons,modifiers):
     global circle_point_tmp
     global circle_polygon
     global circle_polygon_edge
-    min_distance = 20
+    min_distance = 10
     distance = math.sqrt((x-circle_point_tmp[0])**2 + (y-circle_point_tmp[1])**2)
     if distance >= min_distance:
         edge = polygon_node_add(x,y,tp=circle_point_tmp,batch=circle_batch)
         circle_point_tmp = x,y
         circle_polygon.append(circle_point_tmp)
         circle_polygon_edge.append(edge)
-        print(circle_point_tmp,"drag")
+        # print(circle_point_tmp,"drag") # debug
     
 @window.event
 def on_mouse_release(x,y,button, modifiers):
@@ -100,9 +100,9 @@ def on_mouse_release(x,y,button, modifiers):
     circle_polygon.append(circle_polygon[0])
     circle_polygon_edge.append(edge)
     
-    print(circle_point_tmp,"released")
-    print("polygon", circle_polygon)
-    print("polygon_edge", circle_polygon_edge)
+    # print(circle_point_tmp,"released") # debug
+    # print("polygon", circle_polygon) # debug
+    # print("polygon_edge", circle_polygon_edge) # debug
     
     rounded_flag = False
     for kin in kins_p:
