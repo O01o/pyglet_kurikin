@@ -31,9 +31,9 @@ for i in range(count):
     p_nodes.append(pyglet.shapes.Circle(x,y,8,batch=main_batch))
 
 # pentagon mode
-# polygon = [(200,100),(400,100),(500,250),(300,400),(100,250),(200,100)]
+polygon = [(200,100),(400,100),(500,250),(300,400),(100,250),(200,100)]
 # star mode
-polygon = [(200,100),(500,250),(100,250),(400,100),(300,400),(200,100)]
+# polygon = [(200,100),(500,250),(100,250),(400,100),(300,400),(200,100)]
 
 polygon_edge = []
 tmp_point = 0,0

@@ -1,6 +1,7 @@
 from curses import window
 from operator import imod
 from pickletools import pytuple
+from tkinter import ROUND
 from black import main
 from cv2 import polylines
 import pyglet
@@ -8,6 +9,8 @@ import random
 from pyglet import resource
 from pyglet.window import mouse
 import math
+from pyglet import clock
+from enum import Enum, auto
 
 # ウィンドウの描画
 window = pyglet.window.Window(640, 480, "KurikinTest")
@@ -17,20 +20,39 @@ player_kins_image = pyglet.image.load("images/a0.png")
 enemy_kins_image = pyglet.image.load("images/b0.png")
 error_image = pyglet.image.load("images/a1.png")
 
+class State(Enum):
+    STOP = auto()
+    MOVE = auto()
+    ROUNDED = auto()  
 
-class Kin:
-    def __init__(self):
-        self.point = 0,0
-        self.size = 0
-        self.speed = 0
-        self.point_purpose = 0,0
-        self.kin = pyglet.shapes.Circle(0,0,8,color=(255,255,255),batch=None)
+class Kin():
+
+    def __init__(self,point=[0,0],size=8,speed=2.0,point_purpose=[0,0],stop_time=1024,color=(255,255,255),batch=None):
+        self.speed = speed
+        self.point_purpose = point_purpose
+        self.state = State.STOP
+        self.stop_time = stop_time
+        self.dt = 1/24
+        self.distance_min = 6
+        self.kin = pyglet.shapes.Circle(point[0],point[1],size,color=color,batch=batch)
+        self.event = pyglet.clock.schedule_interval(self.callback, self.dt)
     
-    def callback(self, dt=1/24):
-        distance = math.sqrt((self.point_purpose[0]-self.point[0])**2 + (self.point_purpose[0]-self.point[0])**2)
-        self.kin.x += self.speed * ((self.point_purpose[0]-self.point[0])/distance) * dt
-        self.kin.y += self.speed * ((self.point_purpose[1]-self.point[1])/distance) * dt
-   
+    def callback(self, dt):
+        distance = math.sqrt((self.point_purpose[0]-self.kin.x)**2 + (self.point_purpose[1]-self.kin.y)**2)
+        if self.state == State.STOP:
+            self.stop_time += 1
+            if distance >= self.distance_min:
+                self.state = State.MOVE
+        if self.state == State.MOVE:
+            self.stop_time = 0
+            if distance <= self.distance_min:
+                self.state = State.STOP
+            else:
+                self.kin.x += self.speed * ((self.point_purpose[0]-self.kin.x)/distance) * dt
+                self.kin.y += self.speed * ((self.point_purpose[1]-self.kin.y)/distance) * dt
+        if self.state == State.ROUNDED:
+            self.stop_time = 0
+        
 
 # 自分または相手のキンの描画
 def kins_maker(num_kins, batch=None, img=error_image, x0=0, y0=0, x1=640, y1=480, color=(255,255,255)):
@@ -38,8 +60,9 @@ def kins_maker(num_kins, batch=None, img=error_image, x0=0, y0=0, x1=640, y1=480
     for i in range(num_kins):
         kin_x = random.randint(x0,x1)
         kin_y = random.randint(y0,y1)
-        # kin_new = pyglet.sprite.Sprite(img=img, x=kin_x, y=kin_y, batch=batch)
-        kin_new = pyglet.shapes.Circle(kin_x,kin_y,8,color=color,batch=main_batch)
+        # kin_new = pyglet.shapes.Circle(kin_x,kin_y,8,color=color,batch=main_batch)
+        kin_new = Kin(point=(kin_x,kin_y),color=color,batch=batch)
+        kin_new.point_purpose = [kin_x,kin_y]
         kins.append(kin_new)
     return kins
 
@@ -54,9 +77,9 @@ circle_batch = pyglet.graphics.Batch()
 kins_p = kins_maker(num_kins=10, batch=main_batch, img=player_kins_image, x0=0, y0=240, x1=240, y1=480, color=(100,100,255)) # 自分のキンの描画
 kins_e = kins_maker(num_kins=10, batch=main_batch, img=enemy_kins_image, x0=400, y0=0, x1=640, y1=240, color=(255,100,100)) # 自分のキンの描画
 kins_leader_line = pyglet.shapes.Line(0,0,0,0,width=5,batch=main_batch)
-circle_point_tmp = 0,0
-circle_point_center = 0,0
-circle_point_purpose = 0,0
+circle_point_tmp = [0,0]
+circle_point_center = [0,0]
+circle_point_purpose = [0,0]
 circle_polygon = []
 circle_polygon_edge = []
 rounded_mode = False
@@ -92,7 +115,7 @@ def on_mouse_press(x,y,button,modifiers):
         radian_total = 0.0
         # ついでにキンの色も元に戻す
         for kin in kins_p:
-            kin.color = 100,100,255
+            kin.kin.color = 100,100,255
     
     # if rounded mode
     else:
@@ -116,7 +139,7 @@ def on_mouse_press(x,y,button,modifiers):
                 cy += point[1]
             cx /= len(circle_polygon)
             cy /= len(circle_polygon)
-            circle_point_center = cx,cy
+            circle_point_center = [cx,cy]
             # 円の目的点は、現在のマウスポインタとし、直線を引く
             kins_leader_line.x = cx
             kins_leader_line.y = cy
@@ -128,7 +151,7 @@ def on_mouse_press(x,y,button,modifiers):
             circle_polygon_edge = []
             # ついでにキンの色も戻す
             for kin in kins_p:
-                kin.color = 100,100,255
+                kin.kin.color = 100,100,255
         radian_total = 0.0
     
 @window.event
@@ -190,19 +213,22 @@ def on_mouse_release(x,y,button, modifiers):
             # WindingNumberAlgorithm
             for edge in circle_polygon_edge:
                 x0,y0,x1,y1 = edge.position
-                vec0 = x0-kin.x, y0-kin.y
-                vec1 = x1-kin.x, y1-kin.y
+                vec0 = x0-kin.kin.x, y0-kin.kin.y
+                vec1 = x1-kin.kin.x, y1-kin.kin.y
                 radian = math.acos(((vec0[0]*vec1[0])+(vec0[1]*vec1[1]))/((math.sqrt((vec0[0]**2)+(vec0[1]**2)))*(math.sqrt((vec1[0]**2)+(vec1[1]**2)))))
+                
                 # print(radian) # debug
                 radian_total += radian
             
             # WindingNumberAlgorithmによる多角形内外判定の結果出力
             # print(radian_total) # debug
             if radian_total >= 1.999 * math.pi:
-                kin.color = 255,255,100
+                kin.kin.color = 255,255,100
                 rounded_flag = True
+                kin.state = State.ROUNDED
             else:
-                kin.color = 100,100,255
+                kin.kin.color = 100,100,255
+                kin.state = State.MOVE
             radian_total = 0.0
         
         if rounded_flag:
@@ -212,7 +238,7 @@ def on_mouse_release(x,y,button, modifiers):
             circle_polygon = []
             circle_polygon_edge = []
     
-    # if rounded mode
+    # if rounded mode (mouse release)
     else:
         kins_leader_line.x = 0
         kins_leader_line.y = 0
@@ -222,7 +248,22 @@ def on_mouse_release(x,y,button, modifiers):
         circle_polygon = []
         circle_polygon_edge = []
         for kin in kins_p:
-            kin.color = 100,100,255
+            if kin.state == State.ROUNDED:
+                cpcx,cpcy = circle_point_center
+                # TypeError: 'tuple' object does not support item assignment
+                kin.point_purpose[0] += x-cpcx
+                kin.point_purpose[1] += y-cpcy
+                # debug (キンを動かす(無事成功))
+                # kin.kin.x = x
+                # kin.kin.y = y
+                
+            kin.kin.color = 100,100,255
+    
+
+def update(dt):
+    # debug(動かない)
+    # print('p')
+    pass
     
 pyglet.app.run()
-# pyglet.clock.schedule_interval(callback, 1/30)
+# pyglet.clock.schedule_interval(update, 1/30)
